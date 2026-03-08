@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-mongoose.connect("mongodb://127.0.0.1:27017/userstore");
+mongoose.connect("mongodb://127.0.0.1:27017/postsphere");
 
 const userSchema = new mongoose.Schema({
     username : String,
