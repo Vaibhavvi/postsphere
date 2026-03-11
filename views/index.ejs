@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PostSphere</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+    }
+
+    /* Navbar */
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.6rem;
+    }
+    .navbar .btn {
+      border-radius: 25px;
+      font-weight: 500;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 60px 20px;
+      background: #4facfe;
+      color: white;
+      border-radius: 10px;
+      margin: 30px 0;
+    }
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      margin: 15px 0 25px;
+    }
+
+    /* Post Cards */
+    .card {
+      border-radius: 10px;
+      transition: transform 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card-footer .btn-primary {
+      border-radius: 25px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 15px;
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+  <div class="container">
+    <a class="navbar-brand" href="/">PostSphere</a>
+    <div class="d-flex">
+      <% if (user) { %>
+        <span class="me-3">Hello, <%= user.name %>!</span>
+        <a href="/logout" class="btn btn-outline-primary">Logout</a>
+      <% } else { %>
+        <a href="/login" class="btn btn-primary me-2">Login</a>
+        <a href="/register" class="btn btn-outline-primary">Register</a>
+      <% } %>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<div class="container hero">
+  <% if (user) { %>
+    <h1>Welcome, <%= user.name %>!</h1>
+    <p>Start creating posts and sharing your ideas.</p>
+    <a href="/create" class="btn btn-light btn-lg">Create Post</a>
+  <% } else { %>
+    <h1>Welcome to PostSphere</h1>
+    <p>Login or register to start sharing your thoughts.</p>
+    <a href="/login" class="btn btn-light btn-lg me-2">Login</a>
+    <a href="/register" class="btn btn-outline-light btn-lg">Register</a>
+  <% } %>
+</div>
+
+<!-- Latest Posts -->
+<div class="container my-5">
+  <% if (posts && posts.length > 0) { %>
+    <h2 class="text-center mb-4">Latest Posts</h2>
+    <div class="row g-4">
+      <% posts.forEach(post => { %>
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title"><%= post.title %></h5>
+              <p class="card-text"><%= post.content.substring(0,120) %>...</p>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+              <a href="/post/<%= post._id %>" class="btn btn-primary btn-sm">Read More</a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p class="text-center lead mt-5">No posts yet. Be the first to create one!</p>
+  <% } %>
+</div>
+
+<!-- Footer -->
+<footer>
+  © 2026 PostSphere
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
