@@ -3,56 +3,87 @@ const app = express();
 const path = require('path');
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
+const cookieParser = require("cookie-parser");
 
 const UserModel = require('./models/user');
 const PostModel = require('./models/post');
 
-// Middleware for parsing JSON and URL-encoded data
+// ===============================
+// 🔧 CONFIGURATION
+// ===============================
+const PORT = 3000;
+const JWT_SECRET = "shhhhh";
+
+// ===============================
+// 🔧 MIDDLEWARE
+// ===============================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Set view engine and views directory
+// View engine
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-// -------------------------------------------
-// Routes
-// -------------------------------------------
+// ===============================
+// 🔐 AUTH MIDDLEWARE
+// ===============================
+function isLoggedIn(req, res, next) {
+    const token = req.cookies.token;
 
-// Home page
-app.get("/", async (req, res) => {
-    const posts = await PostModel.find().sort({ createdAt: -1 });
-    res.render("index", { 
-        posts,
-        user: req.user // set this from your session or JWT middleware
-    });
-});
+    if (!token) {
+        return res.status(401).send("You must be logged in...");
+    }
 
-// Registration page
-app.get("/register", (req, res) => {
-    res.render("registration");
-});
-
-// Register user
-app.post("/register", async (req, res) => {
     try {
-        let { username, name, email, age, password } = req.body;
+        const data = jwt.verify(token, JWT_SECRET);
+        req.user = data;
+        next();
+    } catch (err) {
+        return res.status(401).send("Invalid or expired token");
+    }
+}
 
-        // Check if user exists
+// ===============================
+// 🎮 CONTROLLERS (LOGIC)
+// ===============================
+
+// Home
+async function getHome(req, res) {
+    const posts = await PostModel.find().sort({ createdAt: -1 });
+
+    res.render("index", {
+        posts,
+        user: req.user || null
+    });
+}
+
+// Profile
+async function getProfile(req, res) {
+    try {
+        const user = await UserModel.findById(req.user.userid);
+        const posts = await PostModel.find({ user: req.user.userid })
+            .sort({ createdAt: -1 });
+
+        res.render("profile", { user, posts });
+
+    } catch (err) {
+        res.status(500).send("Server error");
+    }
+}
+
+// Register
+async function registerUser(req, res) {
+    try {
+        const { username, name, email, age, password } = req.body;
+
         let user = await UserModel.findOne({ email });
-        if (user) {
-            return res.status(500).send("User already exists!");
-        }
+        if (user) return res.send("User already exists!");
 
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(password, salt);
+        const hash = await bcrypt.hash(password, 10);
 
-        // Create user
-        let newUser = await UserModel.create({
+        const newUser = await UserModel.create({
             username,
             name,
             email,
@@ -60,52 +91,152 @@ app.post("/register", async (req, res) => {
             password: hash
         });
 
-        // Generate JWT token
-        let token = jwt.sign({ email: email, userid: newUser._id }, "shhhhh");
-        res.cookie("token", token);
+        const token = jwt.sign(
+            { email, userid: newUser._id },
+            JWT_SECRET
+        );
 
-        res.send("Registration Successful");
-    } catch (error) {
-        console.log(error);
+        res.cookie("token", token);
+        res.redirect("/profile")
+
+    } catch (err) {
         res.status(500).send("Server error");
     }
-});
+}
 
-// Login page
-app.get("/login", (req, res) => {
-    res.render("login");
-});
-
-// Login user
-app.post("/login", async (req, res) => {
+// Login
+async function loginUser(req, res) {
     try {
         const { email, password } = req.body;
-        const user = await UserModel.findOne({ email });
 
-        if (!user) {
-            return res.status(401).send("Invalid email or password");
-        }
+        const user = await UserModel.findOne({ email });
+        if (!user) return res.send("Invalid credentials");
 
         const match = await bcrypt.compare(password, user.password);
-        if (!match) {
-            return res.status(401).send("Invalid email or password");
+        if (!match) return res.send("Invalid credentials");
+
+        const token = jwt.sign(
+            { email, userid: user._id },
+            JWT_SECRET
+        );
+
+        res.cookie("token", token);
+        res.redirect("/profile");
+
+    } catch (err) {
+        res.status(500).send("Server error");
+    }
+}
+
+async function createPost(req, res) {
+    try {
+        const { content } = req.body;
+
+        await PostModel.create({
+            content,
+            user: req.user.userid
+        });
+
+        res.redirect("/profile");
+
+    } catch (err) {
+        res.status(500).send("Error creating post");
+    }
+}
+
+// Delete Post
+app.post("/delete-post/:id", isLoggedIn, async (req, res) => {
+    try {
+        const post = await PostModel.findById(req.params.id);
+
+        // सुरक्षा: only owner can delete
+        if (post.user.toString() !== req.user.userid) {
+            return res.status(403).send("Unauthorized");
         }
 
-        // Redirect to homepage
-        res.redirect("/");
-    } catch (error) {
-        console.log(error);
-        res.status(500).send("Server error");
+        await PostModel.findByIdAndDelete(req.params.id);
+        res.redirect("/profile");
+
+    } catch (err) {
+        res.status(500).send("Error deleting post");
     }
 });
 
-// Logout user
-app.get("/logout", (req, res) => {
-    res.cookie("token", "");
-    res.redirect("/login");
+
+// Edit Post (show edit page)
+app.get("/edit-post/:id", isLoggedIn, async (req, res) => {
+    try {
+        const post = await PostModel.findById(req.params.id);
+
+        if (post.user.toString() !== req.user.userid) {
+            return res.status(403).send("Unauthorized");
+        }
+
+        res.render("edit", { post });
+
+    } catch (err) {
+        res.status(500).send("Error loading edit page");
+    }
 });
 
-// Start server
-app.listen(3000, () => {
-    console.log("Server running on localhost:3000");
+
+// Update Post
+app.post("/update-post/:id", isLoggedIn, async (req, res) => {
+    try {
+        const { content } = req.body;
+        const post = await PostModel.findById(req.params.id);
+
+        if (post.user.toString() !== req.user.userid) {
+            return res.status(403).send("Unauthorized");
+        }
+
+        post.content = content;
+        await post.save();
+
+        res.redirect("/profile");
+
+    } catch (err) {
+        res.status(500).send("Error updating post");
+    }
+});
+
+// Read one post
+app.get("/post/:id", async (req, res) => {
+    try {
+        const post = await PostModel.findById(req.params.id);
+
+        res.render("singlePost", { post });
+
+    } catch (err) {
+        res.send("Post not found");
+    }
+});
+
+// Logout
+function logoutUser(req, res) {
+    res.cookie("token", "");
+    res.redirect("/");
+}
+
+// ===============================
+// 🛣️ ROUTES
+// ===============================
+
+// Pages
+app.get("/", getHome);
+app.get("/profile", isLoggedIn, getProfile);
+app.get("/register", (req, res) => res.render("registration"));
+app.get("/login", (req, res) => res.render("login"));
+app.post("/create-post", isLoggedIn, createPost);
+
+// Actions
+app.post("/register", registerUser);
+app.post("/login", loginUser);
+app.get("/logout", logoutUser);
+
+// ===============================
+// 🚀 SERVER
+// ===============================
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });

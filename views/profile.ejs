@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f5f7fb;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .logout {
+            text-decoration: none;
+            background: #ff4d4d;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        /* Post Box */
+        .post-box {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            border: none;
+            resize: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .post-btn {
+            margin-top: 10px;
+            background: #4a6cf7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .post-btn:hover {
+            background: #3b5be0;
+        }
+
+        /* Posts */
+        .posts h2 {
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .post {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .post p {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .post small {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #999;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <h1>Welcome, <%= user.name %> 👋</h1>
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+
+        <!-- Create Post -->
+        <div class="post-box">
+            <form action="/create-post" method="POST">
+                <textarea name="content" placeholder="What's on your mind?" required></textarea>
+                <button class="post-btn" type="submit">Post</button>
+            </form>
+        </div>
+
+        <!-- Posts -->
+        <div class="posts">
+            <h2>Your Posts</h2>
+
+            <% if (posts.length===0) { %>
+                <p class="empty">No posts yet 😔</p>
+                <% } %>
+
+                    <% posts.forEach(post=> { %>
+                        <div class="post">
+                            <p>
+                                <%= post.content %>
+                            </p>
+                            <small>
+                                <%= post.createdAt.toLocaleString() %>
+                            </small>
+
+                            <div style="margin-top:10px; display:flex; gap:10px;">
+
+                                <!-- Edit -->
+                                <a href="/edit-post/<%= post._id %>"
+                                    style="text-decoration:none; font-size:12px; color:#fff; background:#4caf50; padding:5px 10px; border-radius:6px;">
+                                    Edit
+                                </a>
+
+                                <!-- Delete -->
+                                <form action="/delete-post/<%= post._id %>" method="POST">
+                                    <button
+                                        style="font-size:12px; background:#ff4d4d; color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">
+                                        Delete
+                                    </button>
+                                </form>
+
+                            </div>
+                        </div>
+                        <% }) %>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

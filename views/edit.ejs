@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post</title>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f4f6fb;
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .post {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            transition: 0.3s;
+        }
+
+        .post:hover {
+            transform: translateY(-3px);
+        }
+
+        .content {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .date {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .edit-btn {
+            background: #4caf50;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #ff4d4d;
+            color: white;
+        }
+
+        .save-btn {
+            background: #4a6cf7;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #999;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.85;
+            transform: scale(1.05);
+        }
+
+        textarea {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            resize: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        textarea:focus {
+            border-color: #4a6cf7;
+        }
+
+        .edit-box {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <script>
+        function enableEdit(id) {
+            document.getElementById("view-" + id).style.display = "none";
+            document.getElementById("edit-" + id).style.display = "block";
+        }
+
+        function cancelEdit(id) {
+            document.getElementById("view-" + id).style.display = "block";
+            document.getElementById("edit-" + id).style.display = "none";
+        }
+    </script>
+</head>
+
+<body>
+
+<div class="post">
+
+    <!-- VIEW MODE -->
+    <div id="view-<%= post._id %>">
+        <p class="content"><%= post.content %></p>
+        <small class="date"><%= post.createdAt.toLocaleString() %></small>
+
+        <div class="actions">
+            <button class="edit-btn" onclick="enableEdit('<%= post._id %>')">✏️ Edit</button>
+
+            <form action="/delete-post/<%= post._id %>" method="POST">
+                <button class="delete-btn">🗑 Delete</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT MODE -->
+    <div id="edit-<%= post._id %>" class="edit-box" style="display:none;">
+        <form action="/update-post/<%= post._id %>" method="POST">
+            <textarea name="content"><%= post.content %></textarea>
+
+            <div class="actions">
+                <button type="submit" class="save-btn">💾 Save</button>
+                <button type="button" class="cancel-btn" onclick="cancelEdit('<%= post._id %>')">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>
